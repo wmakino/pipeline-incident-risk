@@ -1,0 +1,85 @@
+/* Primitives: Button, Badge, Dot, Segmented, SearchInput, RankChip, SectionHeader, Logo */
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+  height: 40px; padding: 0 var(--space-4);
+  border-radius: var(--radius-md); border: 1px solid transparent;
+  font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap;
+  transition: background var(--dur-fast), border-color var(--dur-fast), transform var(--dur-fast);
+}
+.btn:active { transform: scale(0.98); }
+.btn--sm { height: 34px; padding: 0 var(--space-3); font-size: 13px; }
+.btn--primary { background: var(--brand-primary); color: var(--brand-on-primary); }
+.btn--primary:hover { background: color-mix(in srgb, var(--brand-primary) 88%, var(--text-primary)); }
+.btn--secondary { background: var(--bg-elevated); border-color: var(--border-default); color: var(--text-primary); }
+.btn--secondary:hover { border-color: var(--text-muted); }
+.btn--ghost { background: transparent; color: var(--text-secondary); }
+.btn--ghost:hover { background: var(--bg-elevated); color: var(--text-primary); }
+.btn--icon { width: 36px; padding: 0; }
+
+.badge {
+  display: inline-flex; align-items: center; gap: var(--space-1);
+  padding: 3px 10px; border-radius: var(--radius-pill);
+  font-size: 12px; line-height: 16px; font-weight: 600;
+  color: var(--badge-color);
+  background: color-mix(in srgb, var(--badge-color) 14%, transparent);
+}
+.badge--sm { padding: 2px 8px; font-size: 11px; }
+
+.dot { width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--dot-color); }
+
+.segmented {
+  display: inline-flex; gap: 2px; padding: 4px;
+  background: var(--bg-surface); border: 1px solid var(--border-default); border-radius: var(--radius-md);
+}
+.segmented__option {
+  height: 30px; padding: 0 var(--space-3); border: 0; border-radius: var(--radius-sm);
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 500; cursor: pointer;
+}
+.segmented__option:hover { color: var(--text-primary); }
+.segmented__option[aria-pressed='true'] { background: var(--bg-elevated); color: var(--text-primary); font-weight: 600; }
+.segmented--pill { border-radius: var(--radius-pill); }
+.segmented--pill .segmented__option { border-radius: var(--radius-pill); }
+
+.search {
+  display: flex; align-items: center; gap: var(--space-2);
+  width: 260px; height: 40px; padding: 0 var(--space-3);
+  background: var(--bg-surface); border: 1px solid var(--border-default); border-radius: var(--radius-md);
+  color: var(--text-muted);
+}
+.search:focus-within { border-color: var(--action-blue); }
+.search input {
+  flex: 1; min-width: 0; border: 0; outline: 0; background: transparent;
+  color: var(--text-primary); font: inherit; font-size: 14px;
+}
+.search input::placeholder { color: var(--text-muted); }
+
+.rank-chip {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: var(--radius-sm);
+  background: var(--bg-elevated); color: var(--text-secondary);
+  font-size: 13px; font-weight: 600;
+}
+.rank-chip--top {
+  color: var(--status-high);
+  background: color-mix(in srgb, var(--status-high) 16%, transparent);
+  font-weight: 700;
+}
+.section-header { display: flex; flex-direction: column; gap: var(--space-2); margin-bottom: var(--space-8); }
+.section-header p { color: var(--text-secondary); }
+
+.logo {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-family: var(--font-display); font-style: normal; font-weight: 600;
+  font-size: 22px; letter-spacing: -0.02em; white-space: nowrap;
+}
+.logo__mark {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: var(--radius-md);
+  background: var(--brand-primary); color: var(--brand-on-primary);
+}
+
+.stat-tile { display: flex; flex-direction: column; gap: 2px; padding: var(--space-3) 14px; border-radius: 10px; background: var(--bg-elevated); }
+.stat-tile__value { font-size: 22px; line-height: 28px; font-weight: 700; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+.stat-tile__label { font-size: 12px; line-height: 16px; color: var(--text-secondary); }

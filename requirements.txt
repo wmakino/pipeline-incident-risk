@@ -1,3 +1,5 @@
 pyproj>=3.6
 pandas>=2.0
 pytest>=8
+pillow>=10
+duckdb>=1.1

@@ -16,13 +16,15 @@ Open http://127.0.0.1:3000.
 
 ## Rebuild the scored list
 
+Incidents live in MotherDuck, database `pipeline_incident_ai`. Put `MOTHERDUCK_TOKEN` in `.env` at the repo root. That file is not committed.
+
 ```bash
 pip install -r requirements.txt
 python build_map.py
 pytest
 ```
 
-`build_map.py` reads `data/pipeline-incidents-comprehensive-data.csv` and writes `dashboard/public/incidents.json`.
+`build_map.py` reads `raw_incidents`, scores each row, and writes `map_features`. The dashboard reads that table. Criticality and groundwater readings stay on the feature and are not part of the risk score.
 
 The source file is Canada Energy Regulator pipeline incident data, Open Government Licence – Canada: https://www.cer-rec.gc.ca/open/incident/pipeline-incidents-comprehensive-data.csv
 

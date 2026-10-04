@@ -10,9 +10,10 @@ import {
   signalTextColor,
   signalValue,
   type IncidentCollection,
-  type IncidentProperties,
   type MapSignal,
 } from "@/lib/incidents";
+import { escapeHtml, incidentPopup, linePopup } from "@/map/popup";
+import "@/map/map.css";
 
 const PIPELINE_URL =
   "https://services5.arcgis.com/vNzamREXvX2WcX6d/ArcGIS/rest/services/CER_Pipeline_Systems_WGS84_view/FeatureServer/3/query?where=1%3D1&outFields=Pipeline_Name,Company,Commodity&f=geojson";
@@ -36,73 +37,14 @@ type LikelihoodMapProps = {
   mapSignal: MapSignal;
   showPipelines: boolean;
   onPipelines: (status: PipelineStatus) => void;
+  preview?: boolean;
 };
 
 type LineKind = "cer";
 
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-}
-
-function formatNumber(value: number): string {
-  return value.toFixed(3);
-}
-
-function textProp(value: unknown): string {
-  return typeof value === "string" || typeof value === "number" ? String(value) : "";
-}
-
 function clusterBaseRadius(count: number): number {
   const digits = String(count).length;
   return Math.min(28, 12 + digits * 2 + Math.sqrt(count));
-}
-
-function formatVolume(value: number): string {
-  return value.toLocaleString("en-CA", { maximumFractionDigits: 3 });
-}
-
-function consequenceLine(item: IncidentProperties): string {
-  if (item.consequence == null) return "Consequence not scored";
-  const volume =
-    item.volume_m3 == null
-      ? "volume not reported"
-      : `${formatVolume(item.volume_m3)} m³ ${item.release_type}`;
-  return `Consequence ${item.consequence} ${escapeHtml(item.consequence_name)} (${escapeHtml(volume)})`;
-}
-
-function riskLine(item: IncidentProperties): string {
-  if (item.risk == null) return "Risk not scored";
-  return `Risk ${item.risk}`;
-}
-
-function incidentPopup(item: IncidentProperties): string {
-  const closed = item.closed_date_blank ? "Yes" : "No";
-  return (
-    `<strong>${escapeHtml(item.incident_id)}</strong><br>` +
-    `${escapeHtml(item.company)} · ${escapeHtml(item.province)}<br>` +
-    `Reported ${escapeHtml(item.reported)}<br>` +
-    `Likelihood ${item.likelihood} ${escapeHtml(item.level_name)}<br>` +
-    `${consequenceLine(item)}<br>` +
-    `${riskLine(item)}<br>` +
-    `${escapeHtml(item.nearest_populated_centre)}<br>` +
-    `${escapeHtml(item.population_density)}<br>` +
-    `Recency ${formatNumber(item.recency)}<br>` +
-    `Nearby ${formatNumber(item.nearby)} (n=${item.n})<br>` +
-    `Never inspected ${item.never_inspected}<br>` +
-    `Routine program ${item.routine_program_inspection}<br>` +
-    `Closed date blank ${closed}`
-  );
-}
-
-function linePopup(props: Record<string, unknown>): string {
-  return (
-    `<strong>${escapeHtml(textProp(props.Pipeline_Name))}</strong><br>` +
-    `${escapeHtml(textProp(props.Company))}<br>` +
-    `${escapeHtml(textProp(props.Commodity))}`
-  );
 }
 
 function tagLines(features: GeoJSON.Feature[], kind: LineKind): GeoJSON.Feature[] {
@@ -123,6 +65,7 @@ export function LikelihoodMap({
   mapSignal,
   showPipelines,
   onPipelines,
+  preview = false,
 }: LikelihoodMapProps) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<import("maplibre-gl").Map | null>(null);
@@ -225,8 +168,11 @@ export function LikelihoodMap({
         center: [-96, 62],
         zoom: 3,
         attributionControl: { compact: false },
+        scrollZoom: !preview,
       });
-      map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
+      if (!preview) {
+        map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
+      }
       mapRef.current = map;
 
       const popup = new maplibregl.Popup({ closeButton: true, maxWidth: "280px" });
@@ -431,7 +377,7 @@ export function LikelihoodMap({
       mapRef.current = null;
       setReady(false);
     };
-  }, [collection]);
+  }, [collection, preview]);
 
   useEffect(() => {
     redrawRef.current();

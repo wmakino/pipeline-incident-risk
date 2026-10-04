@@ -76,15 +76,15 @@ def test_level_color_is_five_fixed_steps_from_blue_to_red():
 
 
 def test_level_names_cover_1_to_5():
-    assert LEVEL_NAMES[1] == "Rare"
-    assert LEVEL_NAMES[5] == "Almost certain"
+    assert LEVEL_NAMES[1] == "Very low"
+    assert LEVEL_NAMES[5] == "Very high"
     assert set(LEVEL_NAMES) == {1, 2, 3, 4, 5}
 
 
 def test_map_files_plot_located_incidents_only(tmp_path):
     import json
 
-    from map_likelihood import write_likelihood_map
+    from map_likelihood import write_incidents_json
 
     incidents = [
         row("INC-A", date(2026, 9, 25), 51.0, -114.0, company="North & West"),
@@ -92,9 +92,8 @@ def test_map_files_plot_located_incidents_only(tmp_path):
         row("INC-C", date(2017, 1, 2), None, None),
     ]
     scored = score_incidents([item.incident for item in incidents])
-    write_likelihood_map(tmp_path, incidents, scored)
+    write_incidents_json(tmp_path / "incidents.json", incidents, scored)
 
-    html = (tmp_path / "likelihood.html").read_text(encoding="utf-8")
     payload = json.loads((tmp_path / "incidents.json").read_text(encoding="utf-8"))
     features = payload["features"]
     by_id = {feature["properties"]["incident_id"]: feature["properties"] for feature in features}
@@ -106,12 +105,7 @@ def test_map_files_plot_located_incidents_only(tmp_path):
     assert by_id["INC-B"]["likelihood"] == 5
     assert by_id["INC-A"]["color"] == level_color(4)
     assert by_id["INC-B"]["color"] == level_color(5)
-    assert "INC-C" not in html
-    assert "incidents.json" in html
-    assert "Almost certain" in html
-    assert "not a safety certificate" in html
-    assert "Consequence is not in this view" in html
-    assert "savings" not in html.lower()
+    assert "savings" not in (tmp_path / "incidents.json").read_text(encoding="utf-8").lower()
 
 
 def test_loader_reads_yes_no_flags_and_blank_closed_date(tmp_path: Path):

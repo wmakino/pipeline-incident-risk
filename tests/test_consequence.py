@@ -41,8 +41,16 @@ def level(
     density: str = "10 or fewer dwelling units",
     what: str = "Equipment Failure",
     why: str = "Maintenance",
+    interruption: str = "",
 ) -> int | None:
-    return consequence_level(release_type, volume, density, what, why)
+    return consequence_level(
+        release_type,
+        volume,
+        density,
+        what,
+        why,
+        interruption=interruption,
+    )
 
 
 def test_names_are_severity_words_not_likelihood_words():
@@ -150,6 +158,29 @@ def test_elevated_labels_match_the_stored_strings():
     assert "Unknown Population Density (Historical Data Migration)" not in ELEVATED_DENSITY
 
 
+def test_short_interruption_adds_one_and_long_adds_two():
+    assert level("Gas", "10", interruption="No pipeline interruption") == 1
+    assert level("Gas", "10", interruption="") == 1
+    assert level("Gas", "10", interruption="Short-term interruption") == 2
+    assert level("Gas", "10", interruption="Long-term interruption") == 3
+    assert level("Gas", "100000", interruption="Long-term interruption") == 5
+    assert level("Gas", "100000", "46 or more dwelling units", interruption="Short-term interruption") == 5
+
+
+def test_interruption_without_volume_is_the_base():
+    assert level("Not Applicable", "", interruption="Short-term interruption") == 2
+    assert level("Gas", "0", interruption="Long-term interruption") == 4
+    assert level("Gas", "", INDUSTRIAL, interruption="Short-term interruption") == 3
+    assert level("Gas", "", INDUSTRIAL, interruption="Long-term interruption") == 5
+    assert level("Gas", "", interruption="Short-term interruption", what="Natural Force Damage") == 3
+    assert level("Not Applicable", "", interruption="No pipeline interruption") is None
+
+
+def test_unexpected_interruption_is_rejected():
+    with pytest.raises(ValueError):
+        level("Gas", "10", interruption="Ongoing")
+
+
 def test_risk_is_the_product_only_when_consequence_exists():
     assert risk_product(4, 4) == 16
     assert risk_product(1, 5) == 5
@@ -172,11 +203,14 @@ def test_cer_file_scores_consequence_from_the_locked_bands():
             item.population_density,
             item.what_happened_category,
             item.why_it_happened_category,
+            item.substance,
+            item.land_use,
+            item.interruption,
         )
         for item in loaded
     ]
     assert len(scored) == 2034
-    assert sum(level is None for level in scored) == 2034 - 682
+    assert sum(level is None for level in scored) == 1298
     assert all(level is None or 1 <= level <= 5 for level in scored)
 
     by_id = {item.incident.incident_id: item for item in loaded}
@@ -188,4 +222,20 @@ def test_cer_file_scores_consequence_from_the_locked_bands():
         fort_mcmurray.population_density,
         fort_mcmurray.what_happened_category,
         fort_mcmurray.why_it_happened_category,
+        fort_mcmurray.substance,
+        fort_mcmurray.land_use,
+        fort_mcmurray.interruption,
     ) >= 4
+    long_shutdown = by_id["INC2016-122"]
+    assert long_shutdown.interruption == "Long-term interruption"
+    assert parse_volume(long_shutdown.approximate_volume) is None
+    assert consequence_level(
+        long_shutdown.release_type,
+        long_shutdown.approximate_volume,
+        long_shutdown.population_density,
+        long_shutdown.what_happened_category,
+        long_shutdown.why_it_happened_category,
+        long_shutdown.substance,
+        long_shutdown.land_use,
+        long_shutdown.interruption,
+    ) == 4

@@ -23,12 +23,16 @@ itself volume times a rate and would count size twice.
 An elevated population-density label adds one step when a base exists. With
 no base, that same label is the base itself and is not added again. A second
 step is one category token: Natural Force Damage, or Natural or Environmental
-Forces. The other what and why labels are causes, so they do not add. The
-level stops at 5.
+Forces. The other what and why labels are causes, so they do not add.
 
-No base and no elevated label means no consequence. Risk is likelihood times
-consequence only when both exist. The level is not a damage cost estimate for
-an individual site and does not certify a line as safe.
+A short-term interruption adds 1. A long-term interruption adds 2. No
+interruption and a blank add nothing. With no volume base, a short
+interruption is the base at 2 and a long interruption is the base at 4.
+The level stops at 5.
+
+No base, no elevated label, and no interruption means no consequence. Risk is
+likelihood times consequence only when both exist. The level is not a damage
+cost estimate for an individual site and does not certify a line as safe.
 """
 
 from __future__ import annotations
@@ -81,7 +85,7 @@ ELEVATED_DENSITY = frozenset(
     }
 )
 
-# --- BOSCEM (EPA) inputs, moved from env_costs.py ---------------------------
+# EPA BOSCEM inputs. Unit costs are per cubic metre of liquid.
 
 MEDIUM_MODIFIERS = {
     "BARREN LAND": 0.90,
@@ -229,6 +233,18 @@ def incident_boscem_cost(
     return boscem_cost(substance, land_use, parse_volume(approximate_volume))
 
 
+def interruption_add(duration: str) -> int:
+    """1 for a short interruption, 2 for a long one, 0 when the line was not interrupted."""
+    text = duration.strip()
+    if text in {"", "No pipeline interruption"}:
+        return 0
+    if text == "Short-term interruption":
+        return 1
+    if text == "Long-term interruption":
+        return 2
+    raise ValueError(f"interruption is {duration!r}")
+
+
 def consequence_level(
     release_type: str,
     approximate_volume: str,
@@ -237,8 +253,9 @@ def consequence_level(
     why_it_happened: str,
     substance: str = "",
     land_use: str = "",
+    interruption: str = "",
 ) -> int | None:
-    """Integer 1-5, or None when this row has neither a base nor elevated density."""
+    """Integer 1-5, or None when base, elevated density, and interruption are all absent."""
     base = boscem_level(
         incident_boscem_cost(release_type, approximate_volume, substance, land_use)
     )
@@ -246,11 +263,15 @@ def consequence_level(
         base = volume_base(release_type, parse_volume(approximate_volume))
     elevated = elevated_density(population_density)
     category = category_step(what_happened, why_it_happened)
+    added = interruption_add(interruption)
     if base is None:
-        if not elevated:
-            return None
-        return 2 if category else 1
-    level = base
+        if added == 0:
+            if not elevated:
+                return None
+            return 2 if category else 1
+        level = 2 if added == 1 else 4
+    else:
+        level = base + added
     if elevated:
         level += 1
     if category:

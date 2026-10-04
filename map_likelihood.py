@@ -1,4 +1,4 @@
-"""Draw one circle per incident, colored by that incident's likelihood."""
+"""Load CER incident rows and write the GeoJSON the dashboard map reads."""
 
 from __future__ import annotations
 
@@ -19,7 +19,8 @@ from consequence import (
     parse_volume,
     risk_product,
 )
-from likelihood import AS_OF, IncidentInput, ScoredIncident
+from aquifer import get_aquifer_vulnerability
+from likelihood import IncidentInput, ScoredIncident
 
 NEVER_COL = "Equipment or component has never been inspected"
 ROUTINE_COL = "Most recent inspection part of the routine inspection program"
@@ -29,11 +30,11 @@ _YELLOW = (0xFE, 0xE0, 0x90)
 _RED = (0xD7, 0x19, 0x1C)
 
 LEVEL_NAMES = {
-    1: "Rare",
-    2: "Unlikely",
-    3: "Possible",
-    4: "Likely",
-    5: "Almost certain",
+    1: "Very low",
+    2: "Low",
+    3: "Medium",
+    4: "High",
+    5: "Very high",
 }
 
 
@@ -50,6 +51,7 @@ class CerIncident:
     nearest_populated_centre: str = ""
     substance: str = ""
     land_use: str = ""
+    interruption: str = ""
 
 
 def _mix(start: tuple[int, int, int], end: tuple[int, int, int], t: float) -> str:
@@ -86,10 +88,44 @@ def _coordinate(value: str) -> float | None:
     return float(text)
 
 
+# MotherDuck stores the CER headers as snake_case. These are the columns the scorer reads.
+RAW_COLUMNS = (
+    ("incident_number", "Incident Number"),
+    ("reported_date", "Reported Date"),
+    ("latitude", "Latitude"),
+    ("longitude", "Longitude"),
+    ("closed_date", "Closed Date"),
+    ("province", "Province"),
+    ("company", "Company"),
+    ("equipment_or_component_has_never_been_inspected", NEVER_COL),
+    ("most_recent_inspection_part_of_the_routine_inspection_program", ROUTINE_COL),
+    ("release_type", "Release Type"),
+    ("approximate_volume_released_m3", "Approximate Volume Released (m3)"),
+    ("population_density", "Population Density"),
+    ("what_happened_category", "What happened category"),
+    ("why_it_happened_category", "Why it happened category"),
+    ("nearest_populated_centre", "Nearest Populated Centre"),
+    ("substance", "Substance"),
+    ("land_use", "Land Use"),
+    ("duration_of_interruption_of_pipeline_operations", "Duration of interruption of pipeline operations"),
+)
+
+
 def load_cer_incidents(path: Path | str) -> list[CerIncident]:
     frame = pd.read_csv(path, encoding="cp1252", dtype=str, keep_default_na=False)
+    return incidents_from_records(frame.to_dict(orient="records"))
+
+
+def load_motherduck_incidents(connection: object) -> list[CerIncident]:
+    projection = ", ".join(f'{column} AS "{label}"' for column, label in RAW_COLUMNS)
+    frame = connection.execute(f"SELECT {projection} FROM raw_incidents").df()  # type: ignore[attr-defined]
+    records = frame.fillna("").astype(str).to_dict(orient="records")
+    return incidents_from_records(records)
+
+
+def incidents_from_records(records: list[dict[str, str]]) -> list[CerIncident]:
     loaded: list[CerIncident] = []
-    for record in frame.to_dict(orient="records"):
+    for record in records:
         incident_id = record["Incident Number"].strip()
         reported = _parse_mdy(record["Reported Date"].strip(), incident_id)
         loaded.append(
@@ -115,6 +151,7 @@ def load_cer_incidents(path: Path | str) -> list[CerIncident]:
                 nearest_populated_centre=record.get("Nearest Populated Centre", "").strip(),
                 substance=record.get("Substance", "").strip(),
                 land_use=record.get("Land Use", "").strip(),
+                interruption=record.get("Duration of interruption of pipeline operations", "").strip(),
             )
         )
     return loaded
@@ -128,10 +165,10 @@ def _parse_mdy(value: str, incident_id: str) -> date:
     return date(year, month, day)
 
 
-def _features(
+def incident_features(
     incidents: list[CerIncident],
     scored: list[ScoredIncident],
-) -> tuple[list[dict[str, object]], int, int]:
+) -> list[dict[str, object]]:
     if len(incidents) != len(scored):
         raise ValueError("score count does not match incidents")
 
@@ -146,8 +183,6 @@ def _features(
     if not located:
         raise ValueError("no incidents with coordinates to map")
 
-    low = min(score.likelihood for _, score in located)
-    high = max(score.likelihood for _, score in located)
     located.sort(key=lambda pair: pair[1].likelihood)
 
     features: list[dict[str, object]] = []
@@ -161,12 +196,17 @@ def _features(
             incident.why_it_happened_category,
             incident.substance,
             incident.land_use,
+            incident.interruption,
         )
         boscem = incident_boscem_cost(
             incident.release_type,
             incident.approximate_volume,
             incident.substance,
             incident.land_use,
+        )
+        avi_index, avi_status = get_aquifer_vulnerability(
+            incident.incident.latitude,
+            incident.incident.longitude,
         )
         features.append(
             {
@@ -209,10 +249,13 @@ def _features(
                         incident.what_happened_category,
                         incident.why_it_happened_category,
                     ),
+                    "interruption": incident.interruption,
+                    "avi_index": avi_index,
+                    "avi_status": avi_status,
                 },
             }
         )
-    return features, low, high
+    return features
 
 
 def write_incidents_json(
@@ -220,7 +263,7 @@ def write_incidents_json(
     incidents: list[CerIncident],
     scored: list[ScoredIncident],
 ) -> Path:
-    features, _low, _high = _features(incidents, scored)
+    features = incident_features(incidents, scored)
     destination = Path(path)
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(
@@ -232,184 +275,3 @@ def write_incidents_json(
         encoding="utf-8",
     )
     return destination
-
-
-def write_likelihood_map(
-    directory: Path | str,
-    incidents: list[CerIncident],
-    scored: list[ScoredIncident],
-    as_of: date = AS_OF,
-) -> Path:
-    folder = Path(directory)
-    folder.mkdir(parents=True, exist_ok=True)
-    features, _low, _high = _features(incidents, scored)
-    reported_dates = [item.incident.reported for item in incidents]
-    collection = {"type": "FeatureCollection", "features": features}
-    (folder / "incidents.json").write_text(
-        json.dumps(collection, ensure_ascii=False, separators=(",", ":")),
-        encoding="utf-8",
-    )
-    html_path = folder / "likelihood.html"
-    html_path.write_text(
-        _html(
-            plotted=len(features),
-            first=min(reported_dates),
-            last=max(reported_dates),
-            as_of=as_of,
-        ),
-        encoding="utf-8",
-    )
-    return html_path
-
-
-def _legend_rows() -> str:
-    rows = []
-    for level in range(5, 0, -1):
-        rows.append(
-            f'<li><span class="swatch" style="background: {level_color(level)}"></span>'
-            f"{level} {LEVEL_NAMES[level]}</li>"
-        )
-    return "".join(rows)
-
-
-def _html(*, plotted: int, first: date, last: date, as_of: date) -> str:
-    return _PAGE.format(
-        plotted=f"{plotted:,}",
-        legend=_legend_rows(),
-        as_of=as_of.isoformat(),
-        first=first.isoformat(),
-        last=last.isoformat(),
-    )
-
-
-_PAGE = """<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Incident likelihood</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<style>
-  :root {{
-    --ink: #2a2420;
-    --panel: #f6f3ee;
-    --line: #d9d3c7;
-    --muted: #5e564e;
-  }}
-  * {{ box-sizing: border-box; }}
-  html, body {{ height: 100%; margin: 0; }}
-  body {{
-    display: grid;
-    grid-template-columns: 300px 1fr;
-    color: var(--ink);
-    font-family: "Segoe UI", sans-serif;
-    background: var(--panel);
-  }}
-  .panel {{
-    padding: 22px 20px;
-    border-right: 1px solid var(--line);
-    overflow: auto;
-  }}
-  h1 {{
-    margin: 0 0 8px;
-    font-size: 22px;
-    font-weight: 650;
-    font-style: normal;
-    letter-spacing: -0.02em;
-  }}
-  p {{ margin: 0 0 12px; font-size: 14px; line-height: 1.45; }}
-  .formula {{ font-variant-numeric: tabular-nums; }}
-  .muted {{ color: var(--muted); font-size: 13px; }}
-  .legend {{
-    list-style: none;
-    margin: 14px 0;
-    padding: 0;
-    font-size: 13px;
-  }}
-  .legend li {{
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin: 4px 0;
-  }}
-  .swatch {{
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    flex: 0 0 auto;
-  }}
-  #map {{ height: 100%; min-height: 420px; background: #e7e2da; }}
-  @media (max-width: 700px) {{
-    body {{ grid-template-columns: 1fr; grid-template-rows: auto 1fr; }}
-    .panel {{ border-right: 0; border-bottom: 1px solid var(--line); }}
-  }}
-</style>
-</head>
-<body>
-  <aside class="panel">
-    <h1>Incident likelihood</h1>
-    <p class="formula">likelihood 1-5 = recency band, +1 nearby, +1 never inspected</p>
-    <p>Each circle is one incident from the CER pipeline incident file. Color is that incident's likelihood level, 1 to 5, as of {as_of} (reported date). Blue is a lower level and red is a higher level. This is not a safety certificate and not a repair design. Consequence is not in this view.</p>
-    <ul class="legend">{legend}</ul>
-    <p class="muted">{plotted} incidents plotted. Reported {first} through {last}. Source: CER pipeline incidents comprehensive data.</p>
-  </aside>
-  <div id="map"></div>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script>
-    const map = L.map("map");
-    L.tileLayer("https://tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png", {{
-      maxZoom: 18,
-      attribution: "&copy; OpenStreetMap"
-    }}).addTo(map);
-
-    function esc(value) {{
-      return String(value)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
-    }}
-
-    function num(value) {{
-      return Number(value).toFixed(3);
-    }}
-
-    fetch("incidents.json")
-      .then((response) => {{
-        if (!response.ok) throw new Error("incidents.json " + response.status);
-        return response.json();
-      }})
-      .then((incidents) => {{
-        const layer = L.geoJSON(incidents, {{
-          pointToLayer: (feature, latlng) => L.circleMarker(latlng, {{
-            radius: feature.properties.radius,
-            color: feature.properties.color,
-            fillColor: feature.properties.color,
-            fillOpacity: 0.88,
-            weight: 0.6,
-            opacity: 1
-          }}),
-          onEachFeature: (feature, marker) => {{
-            const item = feature.properties;
-            const closed = item.closed_date_blank ? "Yes" : "No";
-            marker.bindPopup(
-              "<strong>" + esc(item.incident_id) + "</strong><br>"
-              + esc(item.company) + " · " + esc(item.province) + "<br>"
-              + "Reported " + esc(item.reported) + "<br>"
-              + "Likelihood " + esc(item.likelihood) + " " + esc(item.level_name) + "<br>"
-              + "Recency " + num(item.recency) + "<br>"
-              + "Nearby " + num(item.nearby) + " (n=" + esc(item.n) + ")<br>"
-              + "Never inspected " + esc(item.never_inspected) + "<br>"
-              + "Routine program " + esc(item.routine_program_inspection) + "<br>"
-              + "Closed date blank " + closed
-            );
-          }}
-        }}).addTo(map);
-        map.fitBounds(layer.getBounds(), {{ padding: [24, 24] }});
-      }})
-      .catch((error) => {{
-        document.getElementById("map").textContent = "Could not load incidents.json. " + error;
-      }});
-  </script>
-</body>
-</html>
-"""

@@ -32,10 +32,17 @@ function item(partial: Partial<IncidentProperties>): IncidentProperties {
     risk: 12,
     release_type: "Gas",
     volume_m3: 1000,
+    substance: "",
+    land_use: "",
+    boscem_cost: null,
+    boscem_level: null,
     population_density: "10 or fewer dwelling units",
     nearest_populated_centre: "Edmonton",
     elevated_density: false,
     category_step: false,
+    interruption: "",
+    avi_index: null,
+    avi_status: "no_coverage",
     ...partial,
   };
 }

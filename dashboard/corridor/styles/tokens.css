@@ -1,0 +1,77 @@
+/* CorridorWatch colours, type, and spacing. */
+
+:root {
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-display: var(--font-newsreader), Georgia, serif;
+
+  --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px;
+  --space-6: 24px; --space-8: 32px; --space-12: 48px; --space-16: 64px; --space-24: 96px;
+
+  --radius-sm: 6px; --radius-md: 8px; --radius-lg: 12px; --radius-xl: 16px; --radius-pill: 999px;
+
+  --content-width: 1200px;
+  --gutter: 120px;
+  --map-paper: #F4F1EC;
+  --map-ink: #2A2420;
+  --map-panel: #F3EFE8;
+  --map-line: #D9D3C7;
+  --map-muted: #5E564E;
+
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --dur-fast: 120ms; --dur-base: 220ms;
+}
+
+:root,
+[data-theme='dark'] {
+  --bg-app: #0B1220;
+  --bg-surface: #111C2E;
+  --bg-elevated: #18263A;
+  --brand-primary: #14B8A6;
+  --brand-on-primary: #042F2B;
+  --action-blue: #3B82F6;
+  --status-warning: #F59E0B;
+  --status-high: #E5484D;
+  --status-low: #8A9BB0;
+  --status-success: #22C55E;
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
+  --border-default: #263449;
+  --overlay-scrim: rgb(2 6 23 / 0.7);
+  --shadow-float: 0 24px 48px -12px rgb(0 0 0 / 0.5);
+
+  --incident-5: #1E40AF;
+  --incident-4: #2F5FD0;
+  --incident-3: #5B8DEF;
+  --incident-2: #93B4F2;
+  --incident-1: #C9D8F4;
+
+  color-scheme: dark;
+}
+
+[data-theme='light'] {
+  --bg-app: #F8FAFC;
+  --bg-surface: #F2F6F5;
+  --bg-elevated: #E6EEED;
+  --brand-primary: #0F8F78;
+  --brand-on-primary: #F4FBFA;
+  --action-blue: #2563EB;
+  --status-warning: #D9861A;
+  --status-high: #D83F45;
+  --status-low: #64748B;
+  --status-success: #16A34A;
+  --text-primary: #172033;
+  --text-secondary: #64748B;
+  --text-muted: #94A3B8;
+  --border-default: #D8E0EA;
+  --overlay-scrim: rgb(15 23 42 / 0.45);
+  --shadow-float: 0 24px 48px -12px rgb(15 23 42 / 0.18);
+
+  --incident-5: #1E3A8A;
+  --incident-4: #2F5BB7;
+  --incident-3: #4F7FD6;
+  --incident-2: #8FB0E8;
+  --incident-1: #C3D3F0;
+
+  color-scheme: light;
+}

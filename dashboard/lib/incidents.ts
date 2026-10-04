@@ -1,11 +1,11 @@
 export type LikelihoodLevel = 1 | 2 | 3 | 4 | 5;
 
 export const LEVEL_NAMES: Record<LikelihoodLevel, string> = {
-  1: "Rare",
-  2: "Unlikely",
-  3: "Possible",
-  4: "Likely",
-  5: "Almost certain",
+  1: "Very low",
+  2: "Low",
+  3: "Medium",
+  4: "High",
+  5: "Very high",
 };
 
 const RAMP_BLUE = [0x2c, 0x7b, 0xb6];
@@ -99,10 +99,21 @@ export type IncidentProperties = {
   risk: number | null;
   release_type: string;
   volume_m3: number | null;
+  substance: string;
+  land_use: string;
+  boscem_cost: number | null;
+  boscem_level: LikelihoodLevel | null;
   population_density: string;
   nearest_populated_centre: string;
   elevated_density: boolean;
   category_step: boolean;
+  interruption: string;
+  avi_index: number | null;
+  avi_status: "available" | "no_coverage";
+  criticality_score?: number | null;
+  criticality_status?: string;
+  groundwater_impact_score?: number | null;
+  groundwater_status?: string;
 };
 
 export type IncidentCollection = {

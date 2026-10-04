@@ -1,0 +1,13 @@
+.git
+.firecrawl
+**/.env
+**/node_modules
+**/.next
+**/__pycache__
+**/.pytest_cache
+**/.venv
+docs
+services
+tests
+*.py
+*.xlsx

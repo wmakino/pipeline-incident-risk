@@ -1,19 +1,18 @@
-"""Write scored incidents for the Next.js dashboard map."""
+"""Score MotherDuck incidents and store the map features there."""
 
-from pathlib import Path
-
+from incidents_view import apply_incidents_view
 from likelihood import score_incidents
-from map_likelihood import load_cer_incidents, write_incidents_json
-
-SOURCE = Path("data/pipeline-incidents-comprehensive-data.csv")
-OUTPUT = Path("dashboard/public/incidents.json")
+from map_likelihood import incident_features, load_motherduck_incidents
+from motherduck import connect, replace_map_features
 
 
 def main() -> None:
-    loaded = load_cer_incidents(SOURCE)
+    connection = connect()
+    apply_incidents_view(connection)
+    loaded = load_motherduck_incidents(connection)
     scored = score_incidents([item.incident for item in loaded])
-    path = write_incidents_json(OUTPUT, loaded, scored)
-    print(path.resolve())
+    count = replace_map_features(connection, incident_features(loaded, scored))
+    print(f"pipeline_incident_ai.map_features {count}")
 
 
 if __name__ == "__main__":

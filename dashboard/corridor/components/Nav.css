@@ -1,0 +1,41 @@
+.mast {
+  background: var(--bg-app);
+  border-bottom: 1px solid var(--border-default);
+}
+.mast__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding-top: var(--space-4);
+}
+.mast__identity { display: flex; align-items: baseline; gap: var(--space-4); min-width: 0; }
+.mast__asof { margin: 0; color: var(--text-secondary); font-size: 14px; white-space: nowrap; }
+.mast__nav { border-top: 1px solid var(--border-default); margin-top: var(--space-3); min-width: 0; overflow-x: auto; }
+.mast__links {
+  display: flex;
+  gap: var(--space-1);
+  list-style: none;
+  margin: 0;
+  padding: var(--space-2) 0;
+  min-width: 0;
+}
+.corridor-root .mast__link {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 12px;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  text-decoration: none;
+}
+.corridor-root .mast__link:hover { color: var(--text-primary); }
+.corridor-root .mast__link[aria-current] { color: var(--text-primary); box-shadow: inset 0 -2px 0 var(--brand-primary); }
+
+@media (max-width: 640px) { .mast__asof { display: none; } }

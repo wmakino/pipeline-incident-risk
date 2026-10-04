@@ -1,6 +1,7 @@
 import { useMemo, useState, type KeyboardEvent } from 'react';
 import { CONSEQUENCE_NAMES, type IncidentCollection } from '@/lib/incidents';
 import { rankIncidents } from '@/lib/corridors';
+import { IncidentDrawer } from '../features/drawer/IncidentDrawer';
 import type { IncidentRankRow, Level, Product, Ranking } from '../api/types';
 import { consequenceColor, levelColor, levelLabel } from '../api/labels';
 import {
@@ -27,9 +28,9 @@ function reportedLabel(value: string): string {
   return date.toLocaleDateString('en-CA', { dateStyle: 'medium', timeZone: 'UTC' });
 }
 
-function Score({ score, max, color }: { score: number; max: number; color: string }) {
+function Score({ score, max, color, cell = true }: { score: number; max: number; color: string; cell?: boolean }) {
   return (
-    <span className="table__cell table__score" role="cell">
+    <span className={`${cell ? 'table__cell ' : ''}table__score`} role={cell ? 'cell' : undefined}>
       <strong>{score}</strong>
       <span className="bar" aria-hidden="true">
         <span style={{ width: `${(score / max) * 100}%`, background: color }} />
@@ -38,28 +39,53 @@ function Score({ score, max, color }: { score: number; max: number; color: strin
   );
 }
 
+function formula(row: IncidentRankRow): string {
+  const factors = [
+    row.likelihood_note ? `Likelihood ${row.likelihood_note}` : "",
+    row.consequence_note ? `Consequence ${row.consequence_note}` : "",
+    row.product_note ? `${row.product_note} = ${row.score}` : "",
+  ].filter(Boolean);
+  return factors.join(". ");
+}
+
+function Calc({ note }: { note: string }) {
+  if (!note) return null;
+  return <span className="caption text-muted">{note}</span>;
+}
+
 function IncidentRow({ row, maxScore, onOpen, onKey }: {
   row: IncidentRankRow;
   maxScore: number;
   onOpen: (id: string) => void;
   onKey: (e: KeyboardEvent, id: string) => void;
 }) {
-  const open = row.corridor_id ? () => onOpen(row.corridor_id as string) : undefined;
+  const calculation = [
+    `Likelihood ${row.likelihood}${row.likelihood_note ? `, ${row.likelihood_note}` : ''}`,
+    `Consequence ${row.consequence}${row.consequence_note ? `, ${row.consequence_note}` : ''}`,
+    `Risk ${row.score}, ${row.product_note}`,
+  ].join('. ');
+  const line = formula(row);
   return (
-    <div className={`table__row table__row--incident${open ? '' : ' table__row--static'}`} role="row" tabIndex={open ? 0 : undefined}
-      aria-label={`Rank ${row.rank}, ${row.release_type}, ${row.corridor ?? 'town not named'}${open ? '. Open corridor' : ''}`}
-      onClick={open} onKeyDown={open ? (e) => onKey(e, row.corridor_id as string) : undefined}>
-      <span className="table__cell" role="cell"><RankChip rank={row.rank} /></span>
-      <span className="table__cell table__name" role="cell">
-        <strong>{row.release_type}</strong>
-        <span className="caption text-muted">{row.incident_id} · {reportedLabel(row.reported)}</span>
-      </span>
-      <span className="table__cell" role="cell">{row.corridor ?? <span className="text-muted">Town not named</span>}</span>
-      <span className="table__cell" role="cell">{row.product ? <ProductLabel value={row.product} /> : '—'}</span>
-      <span className="table__cell" role="cell"><LevelMark level={row.likelihood} names={levelLabel} /></span>
-      <span className="table__cell" role="cell"><LevelMark level={row.consequence} names={CONSEQUENCE_NAMES} /></span>
-      <Score score={row.score} max={maxScore} color={levelColor(row.consequence)} />
-      <span className="table__cell table__chev" role="cell" aria-hidden="true">{open ? '›' : ''}</span>
+    <div className="table__incident" onClick={() => onOpen(row.incident_id)}>
+      <div className="table__row table__row--incident" role="row" tabIndex={0}
+        aria-label={`Rank ${row.rank}, ${row.release_type}, ${row.corridor ?? 'town not named'}. ${calculation}. Open risk factors`}
+        onKeyDown={(e) => onKey(e, row.incident_id)}>
+        <span className="table__cell" role="cell"><RankChip rank={row.rank} /></span>
+        <span className="table__cell table__name" role="cell">
+          <strong>{row.release_type}</strong>
+          <span className="caption text-muted">{row.incident_id} · {reportedLabel(row.reported)}</span>
+        </span>
+        <span className="table__cell" role="cell">{row.corridor ?? <span className="text-muted">Town not named</span>}</span>
+        <span className="table__cell" role="cell">{row.product ? <ProductLabel value={row.product} /> : '—'}</span>
+        <span className="table__cell" role="cell"><LevelMark level={row.likelihood} names={levelLabel} /></span>
+        <span className="table__cell" role="cell"><LevelMark level={row.consequence} names={CONSEQUENCE_NAMES} /></span>
+        <span className="table__cell table__calc" role="cell">
+          <Score score={row.score} max={maxScore} color={levelColor(row.consequence)} cell={false} />
+          <Calc note={row.product_note} />
+        </span>
+        <span className="table__cell table__chev" role="cell" aria-hidden="true">›</span>
+      </div>
+      {line ? <p className="table__formula caption text-muted">{line}</p> : null}
     </div>
   );
 }
@@ -77,8 +103,10 @@ export function PriorityList({ ranking, collection, loading, onOpen }: Props) {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
   const [mode, setMode] = useState<Mode>('corridors');
+  const [incidentId, setIncidentId] = useState<string | null>(null);
   const incidents = useMemo(() => (collection ? rankIncidents(collection) : null), [collection]);
   const needle = query.trim().toLowerCase();
+  const opened = collection?.features.find((feature) => feature.properties.incident_id === incidentId)?.properties ?? null;
 
   const rows = useMemo(() => (ranking?.rows ?? []).filter((r) =>
     matchesProduct(r.product, filter) && r.corridor.toLowerCase().includes(needle)),
@@ -91,10 +119,13 @@ export function PriorityList({ ranking, collection, loading, onOpen }: Props) {
   const onKey = (e: KeyboardEvent, id: string) => {
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen(id); }
   };
+  const onIncidentKey = (e: KeyboardEvent, id: string) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setIncidentId(id); }
+  };
 
   return (
     <section id="priority" className="section container" aria-labelledby="priority-title">
-      <SectionHeader id="priority-title" title="Top 15" />
+      <SectionHeader id="priority-title" title="Top 15 Risk" />
 
       <div className="toolbar">
         <div className="toolbar__group">
@@ -138,7 +169,7 @@ export function PriorityList({ ranking, collection, loading, onOpen }: Props) {
               </div>
             );
           }) : incidentRows.map((r) => (
-            <IncidentRow key={r.id} row={r} maxScore={maxScore} onOpen={onOpen} onKey={onKey} />
+            <IncidentRow key={r.id} row={r} maxScore={maxScore} onOpen={setIncidentId} onKey={onIncidentKey} />
           ))}
           {!loading && (mode === 'corridors' ? rows : incidentRows).length === 0 && (
             <div className="table__empty">
@@ -156,6 +187,7 @@ export function PriorityList({ ranking, collection, loading, onOpen }: Props) {
         )}
         <span>Last refreshed {ranking ? new Date(ranking.generated_at).toLocaleDateString('en-CA', { dateStyle: 'medium', timeZone: 'UTC' }) : '—'}</span>
       </div>
+      {opened ? <IncidentDrawer item={opened} onClose={() => setIncidentId(null)} /> : null}
     </section>
   );
 }

@@ -68,6 +68,14 @@
   transition: background var(--dur-fast);
 }
 .table__row--incident { grid-template-columns: 64px 230px 150px 148px 156px 156px 200px 1fr; }
+.table__incident .table__row { border-top: 0; }
+.table__incident { border-top: 1px solid var(--border-default); cursor: pointer; }
+.table__incident--static { cursor: default; }
+.table__incident:hover { background: var(--bg-elevated); }
+.table__incident:hover .table__chev { color: var(--brand-primary); transform: translateX(2px); }
+.table__incident .table__row:hover { background: transparent; }
+.table__formula { margin: 0; padding: 0 var(--space-4) 12px 80px; }
+.table__calc { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding-top: 10px; padding-bottom: 10px; }
 .table__row--static { cursor: default; }
 .table__row:hover { background: var(--bg-elevated); }
 .table__row--static:hover { background: transparent; }

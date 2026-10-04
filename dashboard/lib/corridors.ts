@@ -1,4 +1,5 @@
 import type { IncidentCollection, IncidentProperties } from "./incidents.ts";
+import { riskBreakdown, riskFactors } from "./riskBreakdown.ts";
 import type {
   Consequence,
   CorridorDetail,
@@ -136,6 +137,7 @@ export function rankIncidents(collection: IncidentCollection, limit = 15): Incid
     const item = feature.properties;
     if (item.province !== "Alberta" || item.risk == null || item.consequence == null) continue;
     const place = placeName(item.nearest_populated_centre);
+    const breakdown = riskBreakdown(item);
     candidates.push({
       id: item.incident_id,
       incident_id: item.incident_id,
@@ -147,6 +149,9 @@ export function rankIncidents(collection: IncidentCollection, limit = 15): Incid
       likelihood: item.likelihood,
       consequence: item.consequence,
       score: item.risk,
+      likelihood_note: breakdown.likelihoodNote,
+      consequence_note: breakdown.consequenceNote,
+      product_note: breakdown.productNote,
       rank: 0,
     });
   }
@@ -194,11 +199,26 @@ export function corridorDetail(collection: IncidentCollection, id: string): Corr
       level: member.item.likelihood as Level,
       volume_m3: member.item.volume_m3,
     }));
+  const items = [...group.members]
+    .map((member) => {
+      const report = riskFactors(member.item);
+      return {
+        id: member.item.incident_id,
+        date: member.item.reported,
+        type: member.item.release_type || "Incident",
+        risk: member.item.risk,
+        likelihood: report.likelihood,
+        consequence: report.consequence,
+        product: report.product,
+      };
+    })
+    .sort((a, b) => (b.risk ?? -1) - (a.risk ?? -1) || b.date.localeCompare(a.date) || a.id.localeCompare(b.id));
   return {
     ...row,
     peak,
     summary: `${row.corridor} has ${row.incidents} Alberta incidents with a named town. Each scored incident is likelihood times consequence, the same number as on the map. The highest is ${peak}. The town total is ${row.score}, the sum of those risks. By incident count it is #${row.count_rank}.`,
     by_level: byLevel,
     recent,
+    items,
   };
 }

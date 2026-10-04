@@ -5,6 +5,7 @@ import { onTransitionClick } from '@/lib/page-transition';
 import type { CorridorDetail, Level, RankingRow } from '../../api/types';
 import { consequenceColor, consequenceLabel, levelColor, levelLabel, productColor, productLabel } from '../../api/labels';
 import { Badge, Button, Dot, StatTile, shiftLabel } from '../../components/ui';
+import { RiskFactors } from "./RiskFactors";
 import './drawer.css';
 
 interface Props {
@@ -54,15 +55,18 @@ function InfoPanel({ c }: { c: CorridorDetail }) {
       </section>
 
       <section className="drawer__block">
-        <h3 className="drawer__h">Recent incidents</h3>
-        <ul className="drawer__recent">
-          {c.recent.map((r) => (
-            <li key={r.id}>
-              <Dot color={levelColor(r.level)} size={10} />
-              <span className="drawer__recent-text">
-                <span className="small" style={{ fontWeight: 500 }}>{r.type}{r.volume_m3 != null ? ` · ~${r.volume_m3} m³` : ''}</span>
-                <span className="caption text-muted">{r.date} · Level {r.level}</span>
-              </span>
+        <div className="drawer__row-between">
+          <h3 className="drawer__h">Each incident</h3>
+          <span className="caption text-muted">{c.items.length} total</span>
+        </div>
+        <ul className="drawer__incidents">
+          {c.items.map((item) => (
+            <li key={item.id}>
+              <div className="drawer__incident-head">
+                <strong>{item.type}</strong>
+                <span className="caption text-muted">{item.id} · {item.date}</span>
+              </div>
+              <RiskFactors likelihood={item.likelihood} consequence={item.consequence} product={item.product} />
             </li>
           ))}
         </ul>

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { rankCorridors, rankIncidents } from "./corridors.ts";
+import { rankCorridors, rankIncidents, corridorDetail } from "./corridors.ts";
 import type { IncidentCollection, IncidentProperties, LikelihoodLevel } from "./incidents.ts";
 
 function feature(
@@ -9,6 +9,7 @@ function feature(
   consequence: LikelihoodLevel | null,
   likelihood: 1 | 2 | 3 | 4 | 5,
   substance: string,
+  overrides: Partial<IncidentProperties> = {},
 ): IncidentCollection["features"][number] {
   const item = {
     incident_id: id,
@@ -42,6 +43,7 @@ function feature(
     interruption: "",
     avi_index: null,
     avi_status: "no_coverage",
+    ...overrides,
   } satisfies IncidentProperties;
   return {
     type: "Feature",
@@ -87,6 +89,27 @@ test("top incidents follow likelihood times consequence and skip unscored releas
   assert.equal(ranking.rows[1].incident_id, "a1");
 });
 
+test("a top incident shows the steps behind likelihood times consequence", () => {
+  const collection: IncidentCollection = {
+    type: "FeatureCollection",
+    features: [
+      feature("b1", "Hardisty", 4, 4, "Crude Oil - Sweet", {
+        reported: "2026-06-01",
+        release_type: "Liquid",
+        volume_m3: 1,
+        criticality_score: 5,
+        criticality_status: "scored",
+        groundwater_impact_score: 5,
+        groundwater_status: "scored",
+      }),
+    ],
+  };
+  const ranking = rankIncidents(collection, 15);
+  assert.equal(ranking.rows[0].likelihood_note, "under 1 year");
+  assert.equal(ranking.rows[0].consequence_note, "volume 1; averaged with criticality 5 and groundwater 5 = 4");
+  assert.equal(ranking.rows[0].product_note, "4 × 4");
+});
+
 test("an incident with no consequence adds nothing to the town total", () => {
   const collection: IncidentCollection = {
     type: "FeatureCollection",
@@ -98,4 +121,27 @@ test("an incident with no consequence adds nothing to the town total", () => {
   const ranking = rankCorridors(collection, 15);
   assert.equal(ranking.rows[0].score, 6);
   assert.equal(ranking.rows[0].incidents, 2);
+});
+
+test("opening a corridor lists every factor for each incident", () => {
+  const collection: IncidentCollection = {
+    type: "FeatureCollection",
+    features: [
+      feature("b1", "Hardisty", 4, 4, "Crude Oil - Sweet", {
+        reported: "2026-06-01",
+        release_type: "Liquid",
+        volume_m3: 1,
+      }),
+    ],
+  };
+  const detail = corridorDetail(collection, "hardisty");
+  assert.ok(detail);
+  assert.deepEqual(
+    detail.items[0].likelihood.map((line) => line.label),
+    ["Reported age", "Neighbor", "Never inspected", "Likelihood"],
+  );
+  assert.equal(detail.items[0].likelihood[1].detail, "No, adds nothing");
+  assert.equal(detail.items[0].consequence.length, 9);
+  assert.equal(detail.items[0].consequence[7].detail, "Not scored, left out");
+  assert.equal(detail.items[0].product, "4 × 4 = 16");
 });

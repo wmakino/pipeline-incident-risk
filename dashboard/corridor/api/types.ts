@@ -40,6 +40,9 @@ export interface IncidentRankRow {
   likelihood: Level;
   consequence: Level;
   score: number;
+  likelihood_note: string;
+  consequence_note: string;
+  product_note: string;
 }
 
 export interface IncidentRanking {
@@ -55,9 +58,25 @@ export interface RecentIncident {
   volume_m3: number | null;
 }
 
+export interface FactorLine {
+  label: string;
+  detail: string;
+}
+
+export interface CorridorIncident {
+  id: string;
+  date: string;
+  type: string;
+  risk: number | null;
+  likelihood: FactorLine[];
+  consequence: FactorLine[];
+  product: string;
+}
+
 export interface CorridorDetail extends RankingRow {
   summary: string;
   peak: number;
   by_level: Record<"1" | "2" | "3" | "4" | "5", number>;
   recent: RecentIncident[];
+  items: CorridorIncident[];
 }

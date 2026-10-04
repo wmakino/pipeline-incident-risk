@@ -13,7 +13,9 @@ from consequence import (
     CONSEQUENCE_NAMES,
     category_step,
     consequence_level,
+    boscem_level,
     elevated_density,
+    incident_boscem_cost,
     parse_volume,
     risk_product,
 )
@@ -46,6 +48,8 @@ class CerIncident:
     what_happened_category: str = ""
     why_it_happened_category: str = ""
     nearest_populated_centre: str = ""
+    substance: str = ""
+    land_use: str = ""
 
 
 def _mix(start: tuple[int, int, int], end: tuple[int, int, int], t: float) -> str:
@@ -109,6 +113,8 @@ def load_cer_incidents(path: Path | str) -> list[CerIncident]:
                 what_happened_category=record.get("What happened category", "").strip(),
                 why_it_happened_category=record.get("Why it happened category", "").strip(),
                 nearest_populated_centre=record.get("Nearest Populated Centre", "").strip(),
+                substance=record.get("Substance", "").strip(),
+                land_use=record.get("Land Use", "").strip(),
             )
         )
     return loaded
@@ -153,6 +159,14 @@ def _features(
             incident.population_density,
             incident.what_happened_category,
             incident.why_it_happened_category,
+            incident.substance,
+            incident.land_use,
+        )
+        boscem = incident_boscem_cost(
+            incident.release_type,
+            incident.approximate_volume,
+            incident.substance,
+            incident.land_use,
         )
         features.append(
             {
@@ -184,6 +198,10 @@ def _features(
                     "risk": risk_product(level, consequence),
                     "release_type": incident.release_type,
                     "volume_m3": parse_volume(incident.approximate_volume),
+                    "substance": incident.substance,
+                    "land_use": incident.land_use,
+                    "boscem_cost": boscem,
+                    "boscem_level": boscem_level(boscem),
                     "population_density": incident.population_density,
                     "nearest_populated_centre": incident.nearest_populated_centre,
                     "elevated_density": elevated_density(incident.population_density),

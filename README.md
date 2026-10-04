@@ -24,7 +24,7 @@ python build_map.py
 pytest
 ```
 
-`build_map.py` reads `raw_incidents`, scores each row, and writes `map_features`. The dashboard reads that table. Criticality and groundwater readings stay on the feature and are not part of the risk score.
+`build_map.py` reads `raw_incidents`, scores each row, and writes `map_features`. The dashboard reads that table. A scored criticality and a scored groundwater impact count equally with the release inside consequence. A low reading cannot pull that level down. Risk is still likelihood times that consequence.
 
 The source file is Canada Energy Regulator pipeline incident data, Open Government Licence – Canada: https://www.cer-rec.gc.ca/open/incident/pipeline-incidents-comprehensive-data.csv
 

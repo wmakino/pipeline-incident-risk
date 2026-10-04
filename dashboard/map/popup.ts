@@ -43,7 +43,9 @@ function aquiferLine(item: IncidentProperties): string {
 function modelLine(label: string, score: number | null | undefined, status: string | undefined): string {
   if (!status) return "";
   const value = score == null ? "not scored" : String(score);
-  return `${label} ${value} (${escapeHtml(status)}). Not part of the risk score.<br>`;
+  const included = status === "scored" && score != null;
+  const note = included ? "Included in consequence." : "Not scored, so left out of consequence.";
+  return `${label} ${value} (${escapeHtml(status)}). ${note}<br>`;
 }
 
 export function incidentPopup(item: IncidentProperties): string {

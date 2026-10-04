@@ -15,7 +15,7 @@ export function MethodSection() {
         <article className="method__card">
           <h3>Consequence</h3>
           <p className="method__q">How bad was the release?</p>
-          <p className="small text-secondary">The same 1–5 as the map, from the release, a short or long interruption, elevated density, and natural force.</p>
+          <p className="small text-secondary">The same 1–5 as the map. It starts from the release, then a scored criticality and a scored groundwater impact count equally with it. A low reading cannot pull the release down.</p>
         </article>
         <span className="method__op" aria-hidden="true">=</span>
         <article className="method__card method__card--result">

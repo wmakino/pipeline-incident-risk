@@ -28,13 +28,19 @@ export type SortableIncident = {
   groundwater_impact_score: number | null;
 };
 
-const NUMBER_KEYS = new Set<SortKey>([
+const NUMBER_KEYS = [
   "likelihood",
   "consequence",
   "risk",
   "criticality_score",
   "groundwater_impact_score",
-]);
+] as const;
+
+type NumberKey = (typeof NUMBER_KEYS)[number];
+
+function isNumberKey(key: SortKey): key is NumberKey {
+  return (NUMBER_KEYS as readonly SortKey[]).includes(key);
+}
 
 function reportedTime(value: string): number | null {
   const [month, day, year] = value.split("/").map((part) => Number(part));
@@ -58,12 +64,8 @@ export function sortIncidentRows<T extends SortableIncident>(rows: T[], sort: In
   const direction = sort.direction === "asc" ? 1 : -1;
   return rows.toSorted((left, right) => {
     let compared = 0;
-    if (NUMBER_KEYS.has(sort.key)) {
-      compared = compareMissingLast(
-        left[sort.key] as number | null,
-        right[sort.key] as number | null,
-        sort.direction,
-      );
+    if (isNumberKey(sort.key)) {
+      compared = compareMissingLast(left[sort.key], right[sort.key], sort.direction);
     } else if (sort.key === "reported_date") {
       compared = compareMissingLast(reportedTime(left.reported_date), reportedTime(right.reported_date), sort.direction);
     } else {

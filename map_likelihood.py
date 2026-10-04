@@ -165,9 +165,23 @@ def _parse_mdy(value: str, incident_id: str) -> date:
     return date(year, month, day)
 
 
+def release_consequence(incident: CerIncident) -> int | None:
+    return consequence_level(
+        incident.release_type,
+        incident.approximate_volume,
+        incident.population_density,
+        incident.what_happened_category,
+        incident.why_it_happened_category,
+        incident.substance,
+        incident.land_use,
+        incident.interruption,
+    )
+
+
 def incident_features(
     incidents: list[CerIncident],
     scored: list[ScoredIncident],
+    consequences: dict[str, int | None] | None = None,
 ) -> list[dict[str, object]]:
     if len(incidents) != len(scored):
         raise ValueError("score count does not match incidents")
@@ -188,16 +202,10 @@ def incident_features(
     features: list[dict[str, object]] = []
     for incident, score in located:
         level = score.likelihood
-        consequence = consequence_level(
-            incident.release_type,
-            incident.approximate_volume,
-            incident.population_density,
-            incident.what_happened_category,
-            incident.why_it_happened_category,
-            incident.substance,
-            incident.land_use,
-            incident.interruption,
-        )
+        if consequences is None:
+            consequence = release_consequence(incident)
+        else:
+            consequence = consequences[score.incident_id]
         boscem = incident_boscem_cost(
             incident.release_type,
             incident.approximate_volume,

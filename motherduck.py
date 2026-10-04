@@ -34,6 +34,67 @@ def connect() -> duckdb.DuckDBPyConnection:
     )
 
 
+def _scored_level(score: object, status: object) -> int | None:
+    if status != "scored" or isinstance(score, bool) or not isinstance(score, (int, float)):
+        return None
+    level = int(score)
+    if level != score or not 1 <= level <= 5:
+        return None
+    return level
+
+
+def load_scored_models(connection: duckdb.DuckDBPyConnection) -> dict[str, tuple[int | None, int | None]]:
+    """Criticality and groundwater levels that were actually scored, keyed by incident."""
+    criticality = {
+        str(incident_id): _scored_level(score, status)
+        for incident_id, score, status in connection.execute(
+            "SELECT incident_number, criticality_score, status FROM criticality_output"
+        ).fetchall()
+    }
+    groundwater = {
+        str(incident_id): _scored_level(score, status)
+        for incident_id, score, status in connection.execute(
+            "SELECT incident_number, groundwater_impact_score, status FROM groundwater_output"
+        ).fetchall()
+    }
+    incident_ids = set(criticality) | set(groundwater)
+    return {
+        incident_id: (criticality.get(incident_id), groundwater.get(incident_id))
+        for incident_id in incident_ids
+        if criticality.get(incident_id) is not None or groundwater.get(incident_id) is not None
+    }
+
+
+def update_incident_consequences(
+    connection: duckdb.DuckDBPyConnection,
+    rows: list[tuple[str, int, int | None, int | None]],
+) -> None:
+    """Write likelihood, the folded consequence, and their product onto incident_scores."""
+    connection.execute(
+        """
+        CREATE TEMP TABLE incoming_consequences (
+            incident_number VARCHAR,
+            likelihood INTEGER,
+            consequence INTEGER,
+            risk INTEGER
+        )
+        """
+    )
+    connection.executemany("INSERT INTO incoming_consequences VALUES (?, ?, ?, ?)", rows)
+    connection.execute(
+        """
+        UPDATE incident_scores
+        SET
+            likelihood = incoming_consequences.likelihood,
+            consequence = incoming_consequences.consequence,
+            risk = incoming_consequences.risk,
+            scored_at = now()
+        FROM incoming_consequences
+        WHERE incident_scores.incident_number = incoming_consequences.incident_number
+        """
+    )
+
+
 def replace_map_features(connection: duckdb.DuckDBPyConnection, features: list[dict[str, object]]) -> int:
     """Replace the scored map. Each feature is the GeoJSON object the dashboard draws."""
     criticality = {

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Nav } from "@/corridor/components/Nav";
 import { SearchInput } from "@/corridor/components/ui";
 import { useTheme } from "@/corridor/hooks/useTheme";
-import { recordGroups, type IncidentRow, type RecordField } from "@/lib/incidentRecord";
+import { assignedColumns, recordGroups, type IncidentRow, type RecordField } from "@/lib/incidentRecord";
 import { sortIncidentRows, type IncidentSort, type SortKey } from "@/lib/incidentSort";
 import "@/corridor/styles/tokens.css";
 import "@/corridor/styles/global.css";
@@ -129,6 +129,7 @@ export function IncidentRecords() {
   const selected = visible.find((row) => row.incident_number === selectedId) ?? rows?.find((row) => row.incident_number === selectedId);
   const groups = detail ? recordGroups(detail) : [];
   const fieldCount = groups.reduce((sum, group) => sum + group.fields.length, 0);
+  const emptyCount = detail ? assignedColumns().length - fieldCount : 0;
   const countLabel = rows
     ? `${visible.length.toLocaleString("en-CA")} of ${rows.length.toLocaleString("en-CA")}`
     : "Loading";
@@ -232,7 +233,7 @@ export function IncidentRecords() {
                     {detailError
                       ? detailError
                       : detail
-                        ? `${fieldCount.toLocaleString("en-CA")} filled fields. Blank columns stay off this sheet.`
+                        ? `${fieldCount.toLocaleString("en-CA")} filled, ${emptyCount.toLocaleString("en-CA")} empty`
                         : "Loading the record"}
                   </p>
                 </div>

@@ -11,6 +11,7 @@ from consequence import (
     WHAT_CATEGORY_TOKENS,
     category_step,
     consequence_level,
+    fold_model_scores,
     parse_volume,
     risk_product,
     volume_base,
@@ -179,6 +180,20 @@ def test_interruption_without_volume_is_the_base():
 def test_unexpected_interruption_is_rejected():
     with pytest.raises(ValueError):
         level("Gas", "10", interruption="Ongoing")
+
+
+def test_model_scores_raise_consequence_and_do_not_lower_a_release():
+    assert fold_model_scores(None, None, None) is None
+    assert fold_model_scores(3, None, None) == 3
+    assert fold_model_scores(None, 4, None) == 4
+    assert fold_model_scores(2, 5, 5) == 4
+    assert fold_model_scores(2, 5, None) == 4
+    assert fold_model_scores(3, 4, None) == 4
+    assert fold_model_scores(4, 3, None) == 4
+    assert fold_model_scores(4, 5, 5) == 5
+    assert fold_model_scores(5, 1, 1) == 5
+    assert fold_model_scores(3, 3, 3) == 3
+    assert fold_model_scores(1, 5, 5) == 4
 
 
 def test_risk_is_the_product_only_when_consequence_exists():

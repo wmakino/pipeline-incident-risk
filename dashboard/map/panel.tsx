@@ -86,7 +86,10 @@ export function ConsequenceBrackets() {
         Other what and why labels are causes and do not add. A short interruption adds 1 and a long
         interruption adds 2. With no positive volume, a short interruption is the base at 2 and a
         long interruption is the base at 4. No interruption and a blank add nothing. Missing volume
-        is not scored as zero. Circle color is the risk, unless Likelihood or Consequence is
+        is not scored as zero. A scored criticality and a scored groundwater impact count equally
+        with the release after this table. A reading that was not scored is left out. The result
+        is rounded to the nearest level and cannot fall below the release level. Circle color is
+        the risk, unless Likelihood or Consequence is
         selected above.
       </p>
     </>

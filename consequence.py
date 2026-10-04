@@ -30,9 +30,14 @@ interruption and a blank add nothing. With no volume base, a short
 interruption is the base at 2 and a long interruption is the base at 4.
 The level stops at 5.
 
-No base, no elevated label, and no interruption means no consequence. Risk is
-likelihood times consequence only when both exist. The level is not a damage
-cost estimate for an individual site and does not certify a line as safe.
+No base, no elevated label, and no interruption means no consequence. A scored
+criticality and a scored groundwater impact are then folded in. The release
+and each scored reading count equally. A model that was not scored is left
+out. The result is rounded to the nearest level and is not allowed to fall
+below the release level, so a low model score cannot shrink a measured
+release. Risk is likelihood times that consequence only when both exist. The
+level is not a damage cost estimate for an individual site and does not
+certify a line as safe.
 """
 
 from __future__ import annotations
@@ -277,6 +282,21 @@ def consequence_level(
     if category:
         level += 1
     return min(level, 5)
+
+
+def fold_model_scores(
+    release: int | None,
+    criticality: int | None,
+    groundwater: int | None,
+) -> int | None:
+    """Average the release with each scored model reading. Missing readings drop out."""
+    scores = [score for score in (release, criticality, groundwater) if score is not None]
+    if not scores:
+        return None
+    level = int(math.floor(sum(scores) / len(scores) + 0.5))
+    if release is not None:
+        level = max(release, level)
+    return min(max(level, 1), 5)
 
 
 def risk_product(likelihood: int, consequence: int | None) -> int | None:

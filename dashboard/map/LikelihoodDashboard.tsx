@@ -44,12 +44,14 @@ export function LikelihoodDashboard() {
             </div>
             <p>
               Each circle is one incident from the CER pipeline incident file. Risk is likelihood
-              times consequence, and only when both exist. The map color follows the selected part.
-              Blue is lower and red is higher. A gray circle has no consequence, so it has no risk. This is not a
-              safety certificate and not a repair design. A circle also carries Alberta's aquifer
-              vulnerability index, from 1 to 6. That index is not part of the risk score. The
-              model reading of the incident text and of groundwater impact is a separate service
-              and is not multiplied in.
+              times consequence, and only when both exist. Consequence starts from the release.
+              A scored criticality and a scored groundwater impact count equally with it. A
+              reading that was not scored is left out, and a low reading does not pull the
+              release down. The map color
+              follows the selected part. Blue is lower and red is higher. A gray circle has no
+              consequence, so it has no risk. This is not a safety certificate and not a repair
+              design. A circle also carries Alberta's aquifer vulnerability index, from 1 to 6.
+              That index is not part of the risk score.
             </p>
             <fieldset className="signal-toggle">
               <legend>Map color</legend>

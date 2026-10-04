@@ -92,22 +92,15 @@ export function PriorityList({ ranking, collection, loading, onOpen }: Props) {
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen(id); }
   };
 
-  const title = mode === 'corridors'
-    ? `Top ${ranking?.rows.length ?? 15} corridors to inspect`
-    : `Top ${incidents?.rows.length ?? 15} incidents to inspect`;
-  const sub = mode === 'corridors'
-    ? 'Ranked by the same risk as the map. A town’s score is the sum of each incident’s likelihood times consequence.'
-    : 'Ranked by the same risk as the map. Each score is that incident’s likelihood times consequence.';
-
   return (
     <section id="priority" className="section container" aria-labelledby="priority-title">
-      <SectionHeader id="priority-title" title={title} sub={sub} />
+      <SectionHeader id="priority-title" title="Top 15" />
 
       <div className="toolbar">
         <div className="toolbar__group">
           <Segmented<Mode> label="Ranking" value={mode} onChange={setMode} options={[
             { value: 'corridors', label: 'Corridors' },
-            { value: 'incidents', label: 'Top 15 incidents' },
+            { value: 'incidents', label: 'Incidents' },
           ]} />
           <SearchInput value={query} onChange={setQuery} placeholder={mode === 'corridors' ? 'Search by town' : 'Search by town or incident'} />
           <Segmented<Filter> label="Product" value={filter} onChange={setFilter} options={[

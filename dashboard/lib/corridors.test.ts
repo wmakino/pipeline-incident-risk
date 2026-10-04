@@ -69,7 +69,28 @@ test("a single high-risk incident outranks a town full of low-risk incidents", (
   assert.equal(ranking.rows[0].score, 16);
   assert.equal(ranking.rows[1].corridor, "Edson");
   assert.equal(ranking.rows[1].score, 5);
-  assert.equal(ranking.rows[0].count_rank, 2);
+});
+
+test("unscored counts a named town with no risk and skips an unusable town", () => {
+  const collection: IncidentCollection = {
+    type: "FeatureCollection",
+    features: [
+      feature("a1", "Edson", 2, 3, "Natural Gas - Sweet"),
+      feature("a2", "Edson", null, 5, "Natural Gas - Sweet"),
+      feature("b1", "Not specified", null, 5, "Natural Gas - Sweet"),
+    ],
+  };
+  const ranking = rankCorridors(collection, 15);
+  assert.equal(ranking.unscored, 1);
+  assert.equal(ranking.total_incidents, 2);
+  assert.equal(ranking.unplaced, 1);
+  assert.equal(ranking.rows[0].score, 6);
+  assert.equal(ranking.rows[0].incidents, 2);
+  const detail = corridorDetail(collection, "edson");
+  assert.equal(
+    detail?.summary,
+    "Edson has 2 Alberta incidents. Each scored incident is likelihood times consequence, the same number as on the map. The highest is 6. The town total is 6, the sum of those risks.",
+  );
 });
 
 test("top incidents follow likelihood times consequence and skip unscored releases", () => {

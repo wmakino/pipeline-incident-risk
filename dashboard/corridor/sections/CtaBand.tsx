@@ -6,7 +6,7 @@ export function CtaBand({ onExport, onMap }: { onExport: () => void; onMap: () =
       <div className="cta">
         <div>
           <h2 className="h2 cta__title">Plan your next inspection round</h2>
-          <p className="text-secondary">Export the top 15 as a CSV and share it with your field team.</p>
+          <p className="text-secondary">Export the top 15 corridors as a CSV file for field planning.</p>
         </div>
         <div className="cta__actions">
           <Button onClick={onMap}>View on map</Button>

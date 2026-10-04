@@ -1,12 +1,12 @@
 import type { Ranking } from '../api/types';
 
 export function StatsBar({ ranking }: { ranking: Ranking | null }) {
-  const replacedPct = ranking ? Math.round(((5 - ranking.top5_overlap_with_count_only) / 5) * 100) : null;
+  const top = ranking?.rows[0];
   const stats = [
-    { v: ranking?.total_incidents.toLocaleString() ?? '—', l: 'Incidents analyzed', s: '2008 to 2026' },
-    { v: String(ranking?.rows.length ?? 15), l: 'Priority corridors', s: 'Grouped by nearest town' },
-    { v: ranking?.rows[0] ? String(ranking.rows[0].score) : '—', l: 'Top town risk', s: 'Sum of likelihood × consequence' },
-    { v: replacedPct == null ? '—' : `${replacedPct}%`, l: 'Count-only top 5 replaced', s: 'Noise filtered out' },
+    { v: ranking ? ranking.total_incidents.toLocaleString() : '-', l: 'Alberta incidents', s: '2008 to 2026' },
+    { v: ranking ? ranking.total_corridors.toLocaleString() : '-', l: 'Towns', s: 'Top 15 listed below' },
+    { v: top ? String(top.score) : '-', l: 'Highest town risk', s: top ? top.corridor : '' },
+    { v: ranking ? ranking.unscored.toLocaleString() : '-', l: 'Unscored incidents', s: ranking ? 'Excluded from risk total' : '' },
   ];
   return (
     <div className="container stats">

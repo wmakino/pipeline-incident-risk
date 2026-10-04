@@ -5,7 +5,7 @@ import { IncidentDrawer } from '../features/drawer/IncidentDrawer';
 import type { IncidentRankRow, Level, Product, Ranking } from '../api/types';
 import { consequenceColor, levelColor, levelLabel } from '../api/labels';
 import {
-  ConsequenceBadge, Dot, ProductLabel, RankChip, SearchInput, SectionHeader, Segmented, shiftLabel,
+  Dot, ProductLabel, RankChip, SearchInput, SectionHeader, Segmented,
 } from '../components/ui';
 
 type Filter = 'all' | Product;
@@ -73,7 +73,7 @@ function IncidentRow({ row, maxScore, onOpen, onKey }: {
         <span className="table__cell" role="cell"><RankChip rank={row.rank} /></span>
         <span className="table__cell table__name" role="cell">
           <strong>{row.release_type}</strong>
-          <span className="caption text-muted">{row.incident_id} · {reportedLabel(row.reported)}</span>
+          <span className="caption text-muted">{row.incident_id}, {reportedLabel(row.reported)}</span>
         </span>
         <span className="table__cell" role="cell">{row.corridor ?? <span className="text-muted">Town not named</span>}</span>
         <span className="table__cell" role="cell">{row.product ? <ProductLabel value={row.product} /> : '—'}</span>
@@ -123,9 +123,13 @@ export function PriorityList({ ranking, collection, loading, onOpen }: Props) {
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setIncidentId(id); }
   };
 
+  const sub = mode === 'corridors'
+    ? "Towns ranked by the sum of each incident's likelihood times consequence."
+    : "Alberta incidents ranked by likelihood times consequence.";
+
   return (
     <section id="priority" className="section container" aria-labelledby="priority-title">
-      <SectionHeader id="priority-title" title="Top 15 Risk" />
+      <SectionHeader id="priority-title" title="Top 15 risk" sub={sub} />
 
       <div className="toolbar">
         <div className="toolbar__group">
@@ -144,15 +148,13 @@ export function PriorityList({ ranking, collection, loading, onOpen }: Props) {
       <div className={`table card${loading ? ' table--loading' : ''}`} role="table" aria-label={mode === 'corridors' ? 'Priority corridors' : 'Top incidents'} aria-busy={loading}>
           <div className={`table__row table__row--head${mode === 'incidents' ? ' table__row--incident' : ''}`} role="row">
             {(mode === 'corridors'
-              ? ['#', 'Corridor', 'Product', 'Incidents', 'Consequence', 'Risk score', 'vs count-only', '']
+              ? ['#', 'Corridor', 'Product', 'Incidents', 'Risk score', '']
               : ['#', 'Incident', 'Town', 'Product', 'Likelihood', 'Consequence', 'Risk score', '']
             ).map((h, i) => (
               <span key={i} role="columnheader" className="table__cell">{h}</span>
             ))}
           </div>
-          {mode === 'corridors' ? rows.map((r) => {
-            const shift = shiftLabel(r.rank, r.count_rank);
-            return (
+          {mode === 'corridors' ? rows.map((r) => (
               <div key={r.id} className="table__row" role="row" tabIndex={0}
                 aria-label={`Rank ${r.rank}, ${r.corridor}. Open corridor`}
                 onClick={() => onOpen(r.id)} onKeyDown={(e) => onKey(e, r.id)}>
@@ -162,30 +164,27 @@ export function PriorityList({ ranking, collection, loading, onOpen }: Props) {
                 </span>
                 <span className="table__cell" role="cell"><ProductLabel value={r.product} /></span>
                 <span className="table__cell table__num" role="cell">{r.incidents}</span>
-                <span className="table__cell" role="cell"><ConsequenceBadge value={r.consequence} /></span>
                 <Score score={r.score} max={maxScore} color={consequenceColor[r.consequence]} />
-                <span className="table__cell small" role="cell" style={{ color: shift.color, fontWeight: 500 }}>{shift.text}</span>
                 <span className="table__cell table__chev" role="cell" aria-hidden="true">›</span>
               </div>
-            );
-          }) : incidentRows.map((r) => (
+          )) : incidentRows.map((r) => (
             <IncidentRow key={r.id} row={r} maxScore={maxScore} onOpen={setIncidentId} onKey={onIncidentKey} />
           ))}
           {!loading && (mode === 'corridors' ? rows : incidentRows).length === 0 && (
             <div className="table__empty">
               <strong>No {mode === 'corridors' ? 'corridors' : 'incidents'} match "{query}"</strong>
-              <span className="small text-secondary">Try another town or clear the product filter.</span>
+              <span className="small text-secondary">Try another search term or clear the product filter.</span>
             </div>
           )}
       </div>
 
       <div className="table__note caption text-muted">
         {mode === 'corridors' ? (
-          <span>Showing {rows.length} of {ranking?.total_corridors ?? '—'} corridors · {ranking?.unplaced ?? 0} incidents left out because the nearest town was missing or unusable</span>
+          <span>Showing {rows.length} of {ranking?.total_corridors ?? 0} corridors. {ranking?.unplaced ?? 0} incidents were excluded because the nearest town was missing or unusable.</span>
         ) : (
-          <span>Showing {incidentRows.length} of {incidents?.scored ?? '—'} scored Alberta incidents. A release with no consequence is left out.</span>
+          <span>Showing {incidentRows.length} of {incidents?.scored ?? 0} scored Alberta incidents. Releases without consequence scores are excluded.</span>
         )}
-        <span>Last refreshed {ranking ? new Date(ranking.generated_at).toLocaleDateString('en-CA', { dateStyle: 'medium', timeZone: 'UTC' }) : '—'}</span>
+        <span>Last refreshed {ranking ? new Date(ranking.generated_at).toLocaleDateString('en-CA', { dateStyle: 'medium', timeZone: 'UTC' }) : ''}</span>
       </div>
       {opened ? <IncidentDrawer item={opened} onClose={() => setIncidentId(null)} /> : null}
     </section>

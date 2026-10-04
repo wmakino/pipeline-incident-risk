@@ -217,7 +217,7 @@ export function IncidentRecords() {
               </tbody>
             </table>
             {rows && visible.length === 0 ? (
-              <p className="records-note">No incidents match “{query.trim()}”.</p>
+              <p className="records-note">No incidents match "{query.trim()}".</p>
             ) : null}
           </div>
         </section>

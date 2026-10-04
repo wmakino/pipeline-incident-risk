@@ -48,7 +48,7 @@
 .drawer__block { display: flex; flex-direction: column; gap: var(--space-2); }
 .drawer__h { font-size: 15px; line-height: 20px; font-weight: 600; }
 .drawer__row-between { display: flex; justify-content: space-between; align-items: baseline; }
-.drawer__stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-2); }
+.drawer__stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); }
 
 .drawer__levels, .drawer__recent { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .drawer__levels { gap: 10px; margin-top: 2px; }

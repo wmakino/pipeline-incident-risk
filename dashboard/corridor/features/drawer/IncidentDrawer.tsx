@@ -53,13 +53,13 @@ export function IncidentDrawer({ item, onClose }: { item: IncidentProperties; on
         <header className="drawer__header">
           <div className="drawer__title">
             <div>
-              <span className="caption text-muted">Top 15 Risk / {item.incident_id}</span>
+              <span className="caption text-muted">Top 15 risk / {item.incident_id}</span>
               <h2 id="incident-drawer-title" className="h3 drawer__name">
                 {item.release_type || "Incident"}
               </h2>
               <span className="caption text-muted">
                 {item.reported}
-                {item.nearest_populated_centre ? ` · ${item.nearest_populated_centre}` : ""}
+                {item.nearest_populated_centre ? `, ${item.nearest_populated_centre}` : ""}
               </span>
             </div>
           </div>

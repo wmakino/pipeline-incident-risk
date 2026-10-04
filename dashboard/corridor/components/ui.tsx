@@ -1,6 +1,6 @@
 import { forwardRef, type ButtonHTMLAttributes, type CSSProperties, type ReactNode } from 'react';
-import type { Consequence, Product } from '../api/types';
-import { consequenceColor, consequenceLabel, productColor, productLabel } from '../api/labels';
+import type { Product } from '../api/types';
+import { productColor, productLabel } from '../api/labels';
 import './ui.css';
 
 type BtnVariant = 'primary' | 'secondary' | 'ghost';
@@ -22,10 +22,6 @@ export function Badge({ color, children, size }: { color: string; children: Reac
     </span>
   );
 }
-
-export const ConsequenceBadge = ({ value, size }: { value: Consequence; size?: 'sm' }) => (
-  <Badge color={consequenceColor[value]} size={size}>{consequenceLabel[value]}</Badge>
-);
 
 export const Dot = ({ color, size = 8 }: { color: string; size?: number }) => (
   <span className="dot" style={{ '--dot-color': color, width: size, height: size } as CSSProperties} aria-hidden="true" />
@@ -94,10 +90,3 @@ export const StatTile = ({ value, label, color }: { value: string; label: string
     <span className="stat-tile__label">{label}</span>
   </div>
 );
-
-export function shiftLabel(rank: number, countRank: number) {
-  const d = countRank - rank;
-  if (d > 0) return { text: `▲ ${d}  from #${countRank}`, color: 'var(--status-high)' };
-  if (d < 0) return { text: `▼ ${-d}  from #${countRank}`, color: 'var(--text-secondary)' };
-  return { text: 'No change', color: 'var(--text-muted)' };
-}

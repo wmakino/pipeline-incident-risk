@@ -111,10 +111,6 @@ function townRisk(group: Group): number {
 }
 
 function scoredRows(groups: Group[]): RankingRow[] {
-  const countOrder = [...groups].sort(
-    (a, b) => b.incidents - a.incidents || a.corridor.localeCompare(b.corridor),
-  );
-  const countRank = new Map(countOrder.map((group, index) => [group.id, index + 1]));
   return groups
     .map((group) => ({
       id: group.id,
@@ -123,7 +119,6 @@ function scoredRows(groups: Group[]): RankingRow[] {
       incidents: group.incidents,
       consequence: group.consequence,
       score: townRisk(group),
-      count_rank: countRank.get(group.id) ?? 0,
       centroid: group.centroid,
       rank: 0,
     }))
@@ -165,14 +160,12 @@ export function rankIncidents(collection: IncidentCollection, limit = 15): Incid
 export function rankCorridors(collection: IncidentCollection, limit = 15): Ranking {
   const { members, dropped } = albertaMembers(collection);
   const rows = scoredRows(groupsOf(members));
-  const top5 = new Set(rows.slice(0, 5).map((row) => row.id));
-  const overlap = rows.filter((row) => row.count_rank <= 5 && top5.has(row.id)).length;
   return {
     generated_at: AS_OF,
     total_incidents: members.length,
     unplaced: dropped,
     total_corridors: rows.length,
-    top5_overlap_with_count_only: overlap,
+    unscored: members.filter((member) => member.item.risk == null).length,
     rows: rows.slice(0, limit),
   };
 }
@@ -216,7 +209,7 @@ export function corridorDetail(collection: IncidentCollection, id: string): Corr
   return {
     ...row,
     peak,
-    summary: `${row.corridor} has ${row.incidents} Alberta incidents with a named town. Each scored incident is likelihood times consequence, the same number as on the map. The highest is ${peak}. The town total is ${row.score}, the sum of those risks. By incident count it is #${row.count_rank}.`,
+    summary: `${row.corridor} has ${row.incidents} Alberta incidents. Each scored incident is likelihood times consequence, the same number as on the map. The highest is ${peak}. The town total is ${row.score}, the sum of those risks.`,
     by_level: byLevel,
     recent,
     items,

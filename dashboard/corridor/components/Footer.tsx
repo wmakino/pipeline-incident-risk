@@ -5,7 +5,7 @@ export function Footer() {
     <footer className="footer">
       <div className="container">
         <p className="footer__line">
-          CER incident file, as of 25 Sep 2026. Built at the IEEE YP Industry Hackathon, Calgary. Ranks historical hotspots. Doesn’t certify any pipe as safe.
+          Canada Energy Regulator incident data as of September 25, 2026. Built at the IEEE YP Industry Hackathon in Calgary. Ranks historical incident locations. Does not certify pipeline safety.
         </p>
       </div>
     </footer>

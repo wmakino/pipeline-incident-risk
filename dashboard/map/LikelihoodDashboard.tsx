@@ -96,7 +96,7 @@ export function LikelihoodDashboard() {
                 </p>
               </>
             ) : (
-              <p className="muted">{error ?? "Loading incidents…"}</p>
+              <p className="muted">{error ?? "Loading incidents"}</p>
             )}
           </div>
         </aside>

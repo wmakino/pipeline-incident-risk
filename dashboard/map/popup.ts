@@ -52,7 +52,7 @@ export function incidentPopup(item: IncidentProperties): string {
   const closed = item.closed_date_blank ? "Yes" : "No";
   return (
     `<strong>${escapeHtml(item.incident_id)}</strong><br>` +
-    `${escapeHtml(item.company)} · ${escapeHtml(item.province)}<br>` +
+    `${escapeHtml(item.company)}, ${escapeHtml(item.province)}<br>` +
     `Reported ${escapeHtml(item.reported)}<br>` +
     `Likelihood ${item.likelihood} ${escapeHtml(item.level_name)}<br>` +
     `${consequenceLine(item)}<br>` +

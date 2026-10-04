@@ -8,7 +8,6 @@ import { downloadRankingCsv } from "../lib/csv";
 import { Hero } from "../sections/Hero";
 import { StatsBar } from "../sections/StatsBar";
 import { PriorityList } from "../sections/PriorityList";
-import { CompareSection } from "../sections/CompareSection";
 import { MethodSection } from "../sections/MethodSection";
 import { CtaBand } from "../sections/CtaBand";
 import { CorridorDrawer } from "../features/drawer/CorridorDrawer";
@@ -53,7 +52,6 @@ export function HomePage({
         loading={collection == null && ranking == null}
         onOpen={openCorridor}
       />
-      <CompareSection ranking={ranking} />
       <MethodSection />
       <CtaBand
         onExport={() => ranking && downloadRankingCsv(rows)}

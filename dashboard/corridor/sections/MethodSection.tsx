@@ -4,28 +4,28 @@ export function MethodSection() {
   return (
     <section id="method" className="section section--open container" aria-labelledby="method-title">
       <SectionHeader id="method-title" title="One score, two questions"
-        sub="Every corridor gets a risk score that combines its track record with what is at stake." />
+        sub="Every corridor receives a risk score that combines historical failure patterns with potential consequence." />
       <div className="method__row">
         <article className="method__card">
           <h3>Likelihood</h3>
-          <p className="method__q">How strongly does the history point here?</p>
-          <p className="small text-secondary">The same 1–5 as the map, from reported age, a neighbor under 100 m, and never inspected.</p>
+          <p className="method__q">How likely is an incident?</p>
+          <p className="small text-secondary">Scores range from 1 to 5 based on incident age, neighboring incidents within 100 metres, and inspection history.</p>
         </article>
         <span className="method__op" aria-hidden="true">×</span>
         <article className="method__card">
           <h3>Consequence</h3>
-          <p className="method__q">How bad was the release?</p>
-          <p className="small text-secondary">The same 1–5 as the map. It starts from the release, then a scored criticality and a scored groundwater impact count equally with it. A low reading cannot pull the release down.</p>
+          <p className="method__q">What is the severity of a release?</p>
+          <p className="small text-secondary">Scores range from 1 to 5 based on release volume and substance, combined with facility criticality and groundwater vulnerability. Lower secondary scores do not reduce the release score.</p>
         </article>
         <span className="method__op" aria-hidden="true">=</span>
         <article className="method__card method__card--result">
           <h3>Risk score</h3>
-          <p className="method__q">Where should crews go first?</p>
-          <p className="small text-secondary">Likelihood times consequence. A town’s score is the sum of those products. An incident with no consequence adds nothing.</p>
+          <p className="method__q">Which locations require priority inspection?</p>
+          <p className="small text-secondary">Risk is likelihood multiplied by consequence. A town score sums the risk of its incidents. Incidents without consequence scores do not add to the total.</p>
         </article>
       </div>
       <div className="method__note" role="note">
-        CorridorWatch ranks historical incident hotspots to prioritize inspections. It doesn’t certify any pipe as safe and isn’t a repair design.
+        CorridorWatch ranks historical incident hotspots to prioritize inspections. It does not certify pipeline safety and is not an engineering repair plan.
       </div>
     </section>
   );

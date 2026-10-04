@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { onTransitionClick } from '@/lib/page-transition';
 import type { CorridorDetail, Level, RankingRow } from '../../api/types';
 import { consequenceColor, consequenceLabel, levelColor, levelLabel, productColor, productLabel } from '../../api/labels';
-import { Badge, Button, Dot, StatTile, shiftLabel } from '../../components/ui';
+import { Badge, Button, Dot, StatTile } from '../../components/ui';
 import { RiskFactors } from "./RiskFactors";
 import './drawer.css';
 
@@ -19,11 +19,10 @@ const LEVELS: Level[] = [5, 4, 3, 2, 1];
 
 function InfoPanel({ c }: { c: CorridorDetail }) {
   const max = Math.max(1, ...Object.values(c.by_level));
-  const shift = shiftLabel(c.rank, c.count_rank);
   return (
     <div className="drawer__panel">
       <section className="drawer__block">
-        <h3 className="drawer__h">Why it ranks #{c.rank}</h3>
+        <h3 className="drawer__h">Why this corridor ranks #{c.rank}</h3>
         <p className="small text-secondary">{c.summary}</p>
       </section>
 
@@ -31,7 +30,6 @@ function InfoPanel({ c }: { c: CorridorDetail }) {
         <StatTile value={String(c.score)} label="Risk score" color="var(--brand-primary)" />
         <StatTile value={String(c.incidents)} label="Incidents" />
         <StatTile value={String(c.peak)} label="Highest incident" color={consequenceColor[c.consequence]} />
-        <StatTile value={shift.text.split('  ')[0]} label={c.rank === c.count_rank ? 'Same as count-only' : `Shift from #${c.count_rank}`} color={shift.color} />
       </section>
 
       <section className="drawer__block">
@@ -56,7 +54,7 @@ function InfoPanel({ c }: { c: CorridorDetail }) {
 
       <section className="drawer__block">
         <div className="drawer__row-between">
-          <h3 className="drawer__h">Each incident</h3>
+          <h3 className="drawer__h">Recorded incidents</h3>
           <span className="caption text-muted">{c.items.length} total</span>
         </div>
         <ul className="drawer__incidents">
@@ -64,7 +62,7 @@ function InfoPanel({ c }: { c: CorridorDetail }) {
             <li key={item.id}>
               <div className="drawer__incident-head">
                 <strong>{item.type}</strong>
-                <span className="caption text-muted">{item.id} · {item.date}</span>
+                <span className="caption text-muted">{item.id}, {item.date}</span>
               </div>
               <RiskFactors likelihood={item.likelihood} consequence={item.consequence} product={item.product} />
             </li>
@@ -146,8 +144,8 @@ export function CorridorDrawer({ detail, order, onClose, onNavigate }: Props) {
           </div>
           <div className="drawer__header-actions">
             <div className="drawer__pager">
-              <Button size="sm" disabled={!prev} onClick={() => prev && onNavigate(prev.id)} aria-label="Previous corridor">‹ Prev</Button>
-              <Button size="sm" disabled={!next} onClick={() => next && onNavigate(next.id)} aria-label="Next corridor">Next ›</Button>
+              <Button size="sm" disabled={!prev} onClick={() => prev && onNavigate(prev.id)} aria-label="Previous corridor">Previous</Button>
+              <Button size="sm" disabled={!next} onClick={() => next && onNavigate(next.id)} aria-label="Next corridor">Next</Button>
             </div>
             <Link href="/map" className="btn btn--primary btn--sm" onClick={onTransitionClick(router, "/map")}>Open the map</Link>
             <Button ref={closeRef} size="sm" icon onClick={onClose} aria-label="Close">✕</Button>

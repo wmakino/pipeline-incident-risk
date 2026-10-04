@@ -15,7 +15,6 @@ export interface RankingRow {
   incidents: number;
   consequence: Consequence;
   score: number;
-  count_rank: number;
   centroid: LatLng;
 }
 
@@ -24,7 +23,7 @@ export interface Ranking {
   total_incidents: number;
   unplaced: number;
   total_corridors: number;
-  top5_overlap_with_count_only: number;
+  unscored: number;
   rows: RankingRow[];
 }
 

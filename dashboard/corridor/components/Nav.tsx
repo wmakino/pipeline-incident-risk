@@ -8,7 +8,6 @@ import './Nav.css';
 
 const SECTIONS = [
   { id: 'priority', label: 'Inspect list' },
-  { id: 'compare', label: 'Compare' },
   { id: 'method', label: 'Method' },
 ];
 
